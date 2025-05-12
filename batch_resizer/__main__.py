@@ -34,7 +34,7 @@ def process_image(
             quality = 85
             buffer = io.BytesIO()
             img.save(buffer, format="JPEG", quality=quality)
-            while buffer.tell() > max_size_kb * 1000 and quality > 10:
+            while buffer.tell() > max_size_kb * 1000 and quality > 5:
                 quality -= 5
                 buffer.seek(0)
                 buffer.truncate(0)
@@ -69,6 +69,39 @@ def process_directory(
             and path.suffix.lower() in (".jpg", ".jpeg")
             and f"_{suffix}" not in path.stem):
             process_image(path, min_width, min_height, max_size_kb, suffix)
+
+def main(args : argparse.Namespace) -> None:
+    """
+    Main function to handle command line arguments and call the processing function.
+    Determines if the input path is a file or a directory and processes accordingly.
+    """
+    input_path = Path(args.directory)
+
+    if input_path.is_dir():
+        process_directory(
+            input_path,
+            min_width=args.min_width,
+            min_height=args.min_height,
+            max_size_kb=args.max_size,
+            suffix=args.suffix
+        )
+    elif input_path.is_file():
+        # Check if the file is an image and does not already have the suffix
+        if (input_path.suffix.lower() in (".jpg", ".jpeg") and
+                f"_{args.suffix}" not in input_path.stem):
+            process_image(
+                input_path,
+                min_width=args.min_width,
+                min_height=args.min_height,
+                max_size_kb=args.max_size,
+                suffix=args.suffix
+            )
+        elif f"_{args.suffix}" in input_path.stem:
+            pass
+        else:
+            raise ValueError(f"File {input_path} is not a supported image format.")
+    else:
+        raise FileNotFoundError(f"Input path {args.directory} is not a valid file or directory.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -106,10 +139,5 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    process_directory(
-        args.directory,
-        min_width=args.min_width,
-        min_height=args.min_height,
-        max_size_kb=args.max_size,
-        suffix=args.suffix
-    )
+
+    main(args)
