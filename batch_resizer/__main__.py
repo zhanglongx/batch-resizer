@@ -64,7 +64,10 @@ def process_directory(
         raise NotADirectoryError(f"{dir_path!s} is not a directory.")
 
     for path in base.rglob("*"):
-        if path.is_file() and path.suffix.lower() in (".jpg", ".jpeg"):
+        # Only process .jpg/.jpeg files that do NOT already have the suffix in their name
+        if (path.is_file()
+            and path.suffix.lower() in (".jpg", ".jpeg")
+            and f"_{suffix}" not in path.stem):
             process_image(path, min_width, min_height, max_size_kb, suffix)
 
 if __name__ == "__main__":
